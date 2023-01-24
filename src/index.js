@@ -10,15 +10,16 @@ const categoryId = {
     smg: 5,
 };
 
-puppeteer.launch({
-    headless: false,
-    executablePath: '/opt/homebrew/bin/chromium',
-    args: ['--start-maximized']
-})
-.then(async browser => {
+async function getStickers(query) {
+    const browser = await puppeteer.launch({
+        headless: false,
+        executablePath: '/opt/homebrew/bin/chromium',
+        args: ['--start-maximized']
+    });
+
     const page = await browser.newPage();
     await page.goto('https://tradeit.gg/csgo/trade');
-    await page.waitForTimeout(8000);
+    await page.waitForTimeout(5000);
 
     // select 'has stickers' category
     await page.evaluate(() => {
@@ -27,7 +28,7 @@ puppeteer.launch({
 
     // select search bar and input query
     await page.click('#input-92');
-    await page.keyboard.type('m4a4', {
+    await page.keyboard.type('desert eagle', {
         delay: 50,
     });
 
@@ -39,16 +40,12 @@ puppeteer.launch({
     await page.waitForTimeout(2000);
     // await page.click('#siteInventoryContainer .unstackContainer');
 
-    const elementsToExpand = await page.$$('#siteInventoryContainer .unstackContainer');
+    const elementsToExpand = await page.$$('#siteInventoryContainer .count');
 
-    for (const elm of elementsToExpand) {
-        console.log('element', elm);
-        await elm.click();
-        await page.waitForTimeout(2000);
+    for (let i = 0; i < 10; i++) {
+        await page.click('#siteInventoryContainer .count');
+        await page.waitForTimeout(1500);
     }
-    
+};
 
-    
-    // await page.screenshot({path: 'screenshot.jpg'});
-    
-});
+getStickers();
