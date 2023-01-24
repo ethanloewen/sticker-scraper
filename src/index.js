@@ -18,7 +18,7 @@ puppeteer.launch({
 .then(async browser => {
     const page = await browser.newPage();
     await page.goto('https://tradeit.gg/csgo/trade');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(8000);
 
     // select 'has stickers' category
     await page.evaluate(() => {
@@ -36,11 +36,19 @@ puppeteer.launch({
     //     // console.log('now');
     // });
 
-    setTimeout(() => {
-        page.hover('.item-container');
-    }, 3000);
+    await page.waitForTimeout(2000);
+    // await page.click('#siteInventoryContainer .unstackContainer');
+
+    const elementsToExpand = await page.$$('#siteInventoryContainer .unstackContainer');
+
+    for (const elm of elementsToExpand) {
+        console.log('element', elm);
+        await elm.click();
+        await page.waitForTimeout(2000);
+    }
+    
 
     
     // await page.screenshot({path: 'screenshot.jpg'});
-    // await browser.close();
+    
 });
