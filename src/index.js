@@ -53,25 +53,33 @@ async function getStickers(query) {
     // console.log(foundStickers);
 
     const stickerElements = await page.$$('#siteInventoryContainer .emojis img');
+    // const stickerElements = await page.$$('#siteInventoryContainer > div > div > div > div > div > div > div.item-details.md.pa-2 > div.flex.emojis.d-flex.flex-column');
 
     for (let i = 0; i < stickerElements.length; i++) {
         elm = stickerElements[i];
+        targetSticker = stickerDB['battle scarred'];
         // console.log(elm.getAttribute('src'));
-        try {
+        // try {
             const stickerSrc = await page.evaluate(elm => elm.getAttribute('src'), elm);
-            if (stickerSrc == stickerDB['battle scarred']) {
+            if (stickerSrc == targetSticker) {
                 console.log('Sticker found!');
 
-                const hasSibling = await page.evaluate(elm => elm.nextSibling());
+                const hasSibling = await page.evaluate(elm => elm.nextSibling, elm);
                 if (hasSibling) {
-                    console.log(hasSibling);
+                    const siblingSrc = await page.evaluate(elm => elm.nextSibling.getAttribute('src'), elm)
+                    if (siblingSrc == targetSticker) {
+                        continue;
+                    }
+
+                    // console.log('next sibling src', hasSibling);
                 }
             }
-        }
-        catch {
-            console.error();
-            // console.log('Nothing for this element');
-        }
+
+        // }
+        // catch {
+        //     console.error();
+        //     // console.log('Nothing for this element');
+        // }
     }
     
 
