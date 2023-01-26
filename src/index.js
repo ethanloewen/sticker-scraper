@@ -32,20 +32,39 @@ async function getStickers(query) {
         document.querySelectorAll('.v-input--selection-controls__ripple')[9].click();
     });
 
+    // close popup
+    await page.waitForTimeout(2000);
+    await page.click('#app > div.v-application--wrap > main > div > div > div > div.player-wrapper.shown > button');
+
+    await page.click('#app > div.v-application--wrap > main > div > div > div > div.site-inventory.col-md-6.col-12 > div > div.inventory-card.v-card.v-sheet.v-sheet--outlined.theme--dark.pb-2.mb-6.light-bg > div.row.pb-2.mb-3.mt-2 > div > div > div > div > div.rounded-0.pt-0.no-box-shadow.v-card.v-sheet.theme--dark.filters-wrapper.light-bg > div > div.d-flex.pa-0.pl-3.filters-container.filters.game-container.flex-shrink-1.col-auto.col > div > div > div > div');
+    await page.waitForTimeout(1000);
+    await page.click('#list-95 > div:nth-child(4)');
+
     // select search bar and input query
     await page.click('#input-92');
     await page.keyboard.type(query, {
         delay: 50,
     });
 
-    // close popup
-    await page.click('#app > div.v-application--wrap > main > div > div > div > div.player-wrapper.shown > button');
-
     await page.waitForTimeout(5000);
 
-    for (let i = 0; i < 15; i++) {
-        await page.click('#siteInventoryContainer .count');
+    // for (let i = 0; i < 20; i++) {
+    //     await page.click('#siteInventoryContainer .count');
+    //     await page.waitForTimeout(1500);
+    // }
+
+    // expand minimized item groups
+    let count = 0;
+    let doneLoading = false;
+    let loadingLimit = 30;
+    while (count < loadingLimit && !doneLoading) {
         await page.waitForTimeout(1500);
+        if (await page.$('#siteInventoryContainer .count')) {
+            await page.click('#siteInventoryContainer .count');
+            count++;
+        } else {
+            doneLoading = true;
+        }
     }
 
     // const stickerElements = await page.$$('#siteInventoryContainer .emojis img');
@@ -60,7 +79,7 @@ async function getStickers(query) {
 
         const item = stickerElements[i];
         const stickersArr = await item.$$('img');
-        const targetSticker = stickerDB['battle scarred (holo)'];
+        const targetSticker = stickerDB['battle scarred'];
         let stickerFound = false;
 
         for (let sticker of stickersArr) {
@@ -84,4 +103,4 @@ async function getStickers(query) {
     }
 };
 
-getStickers('ak-47');
+getStickers('usp-s');
