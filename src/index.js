@@ -1,3 +1,4 @@
+const { type } = require('os');
 const puppeteer = require('puppeteer-extra');
 
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
@@ -36,6 +37,9 @@ async function getStickers(query) {
         delay: 50,
     });
 
+    // close popup
+    await page.click('#app > div.v-application--wrap > main > div > div > div > div.player-wrapper.shown > button');
+
     await page.waitForTimeout(3000);
     // await page.click('#siteInventoryContainer .unstackContainer');
 
@@ -52,35 +56,48 @@ async function getStickers(query) {
     // // }
     // console.log(foundStickers);
 
-    const stickerElements = await page.$$('#siteInventoryContainer .emojis img');
-    // const stickerElements = await page.$$('#siteInventoryContainer > div > div > div > div > div > div > div.item-details.md.pa-2 > div.flex.emojis.d-flex.flex-column');
+    // const stickerElements = await page.$$('#siteInventoryContainer .emojis img');
+    const stickerElements = await page.$$('#siteInventoryContainer > div > div > div > div > div > div > div.item-details.md.pa-2 > div.flex.emojis.d-flex.flex-column');
 
     for (let i = 0; i < stickerElements.length; i++) {
-        elm = stickerElements[i];
-        targetSticker = stickerDB['battle scarred'];
-        // console.log(elm.getAttribute('src'));
-        // try {
-            const stickerSrc = await page.evaluate(elm => elm.getAttribute('src'), elm);
-            if (stickerSrc == targetSticker) {
-                console.log('Sticker found!');
+        const item = stickerElements[i];
+        const stickersArr = await item.$$('img');
+        const targetSticker = stickerDB['battle scarred'];
+        let stickerFound = false;
 
-                const hasSibling = await page.evaluate(elm => elm.nextSibling, elm);
-                if (hasSibling) {
-                    const siblingSrc = await page.evaluate(elm => elm.nextSibling.getAttribute('src'), elm)
-                    if (siblingSrc == targetSticker) {
-                        continue;
-                    }
+        // console.log('length', Object.keys(item).length);
+        // console.log(stickersArr);
+        // console.log(stickersArr.length)
 
-                    // console.log('next sibling src', hasSibling);
-                }
+        for (let sticker of stickersArr) {
+            const stickerUrl = await page.evaluate(el => el.getAttribute('src'), sticker);
+            // console.log(stickerUrl);
+
+            if (stickerUrl == targetSticker) {
+                stickerFound = true;
             }
+        }
 
-        // }
-        // catch {
-        //     console.error();
-        //     // console.log('Nothing for this element');
+        if (stickerFound) {
+            //click on item with sticker
+            console.log('sticker found');
+        }
+    
+        // reset stickerFound var
+        stickerFound = false;
+
+        // const childrenArr = await page.evaluate(item => item.children, item);
+        // for (let j = 0; j < stickersArr.length; j++) {
+        //     sticker = stickersArr[j];
+        //     const stickerSrc = await sticker.$eval(elm => elm.getAttribute('src'));
+        //     // console.log('src', stickerSrc);
+        //     if (stickerSrc == targetSticker) {
+        //         console.log('hit here');
+        //         stickerFound = true;
+        //     }
         // }
     }
+
     
 
     // #siteInventoryContainer > div > div > div > div > div > div > div.item-details.md.pa-2 > div.flex.emojis.d-flex.flex-column > img
