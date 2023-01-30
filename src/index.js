@@ -50,21 +50,11 @@ async function getStickers(query, loadMax = 100) {
     await page.click('#list-95 > div:nth-child(4)');
 
     // search for item
-    await searchItem(query, page);
+    await searchItem(page, query);
 
-    // expand minimized item groups
-    let count = 0;
-    let doneLoading = false;
-    let loadingLimit = loadMax;
-    while (count < loadingLimit && !doneLoading) {
-        await page.waitForTimeout(1500);
-        if (await page.$('#siteInventoryContainer .count')) {
-            await page.click('#siteInventoryContainer .count');
-            count++;
-        } else {
-            doneLoading = true;
-        }
-    }
+    // unstack item containers
+    await unstackItems(page, loadMax);
+    
 
     // const stickerElements = await page.$$('#siteInventoryContainer .emojis img');
     const stickerElements = await page.$$('#siteInventoryContainer > div > div > div > div > div > div > div.item-details.md.pa-2 > div.flex.emojis.d-flex.flex-column');
@@ -79,6 +69,7 @@ async function getStickers(query, loadMax = 100) {
         }
 
         const item = stickerElements[i];
+        // find the parent node 2 levels up with xPath
         const itemParent = (await item.$x('../..'))[0];
         // console.log('item parent', itemParent);
 
@@ -116,7 +107,7 @@ async function getStickers(query, loadMax = 100) {
     console.log('done program cycle : searched stickers -', stickersSearched);
 };
 
-async function searchItem(searchTerm, page) {
+async function searchItem(page, searchTerm) {
     // select search bar and input query
     await page.click('#input-92');
     await page.keyboard.type(searchTerm, {
@@ -124,6 +115,22 @@ async function searchItem(searchTerm, page) {
     });
 
     await page.waitForTimeout(5000);
+};
+
+// expand stacked item groups (default tradeit.gg behavior)
+async function unstackItems(page, loadMax) {
+    let count = 0;
+    let doneLoading = false;
+    let loadingLimit = loadMax;
+    while (count < loadingLimit && !doneLoading) {
+        await page.waitForTimeout(1500);
+        if (await page.$('#siteInventoryContainer .count')) {
+            await page.click('#siteInventoryContainer .count');
+            count++;
+        } else {
+            doneLoading = true;
+        }
+    }
 };
 
 // getStickers function params: (String: item name), (Number: load limit per page [defaults to 100])
