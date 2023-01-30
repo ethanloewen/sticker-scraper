@@ -25,7 +25,7 @@ const searchForStickers = [
     stickerDB['navi 2020']
 ];
 
-async function getStickers(query, loadMax = 100) {
+async function getStickers(query, loadMax = 100, minPrice = '0', maxPrice = '100000') {
     const browser = await puppeteer.launch({
         headless: false,
         executablePath: '/opt/homebrew/bin/chromium',
@@ -39,6 +39,24 @@ async function getStickers(query, loadMax = 100) {
     // select 'has stickers' category
     await page.evaluate(() => {
         document.querySelectorAll('.v-input--selection-controls__ripple')[9].click();
+    });
+
+    // set min price
+    const minInput = await page.$('#advanced-filter .price-inputs > div:nth-child(1) input');
+    await minInput.click({clickCount: 3});
+    await minInput.press('Backspace');
+    // await page.waitForTimeout(5000);
+    await page.keyboard.type(minPrice, {
+        delay: 50,
+    });
+
+    // set max price
+    const maxInput = await page.$('#advanced-filter .price-inputs > div:nth-child(2) input');
+    await maxInput.click({clickCount: 3});
+    await maxInput.press('Backspace');
+    // await page.waitForTimeout(5000);
+    await page.keyboard.type(maxPrice, {
+        delay: 50,
     });
 
     // close popup
@@ -60,7 +78,7 @@ async function getStickers(query, loadMax = 100) {
     const stickerElements = await page.$$('#siteInventoryContainer > div > div > div > div > div > div > div.item-details.md.pa-2 > div.flex.emojis.d-flex.flex-column');
     // let popupClose = true;
 
-    let stickersSearched = 0;
+    let itemsSearched = 0;
 
     for (let i = 0; i < stickerElements.length; i++) {
         // close popup if it exists
@@ -84,11 +102,11 @@ async function getStickers(query, loadMax = 100) {
             for (const targetSticker of searchForStickers) {
                 if (stickerUrl == targetSticker) {
                     stickerFound = true;
-                    latestStickerMatch = Object.keys(stickerDB).find(key => stickerDB[key] === targetSticker);;
+                    latestStickerMatch = Object.keys(stickerDB).find(key => stickerDB[key] === targetSticker);
                 }
             }
 
-            stickersSearched++;
+            itemsSearched++;
         }
 
         if (stickerFound) {
@@ -109,7 +127,7 @@ async function getStickers(query, loadMax = 100) {
         stickerFound = false;
     }
 
-    console.log('done program cycle : searched stickers -', stickersSearched);
+    console.log('done program cycle : items searched -', itemsSearched);
 };
 
 async function searchItem(page, searchTerm) {
@@ -136,7 +154,9 @@ async function unstackItems(page, loadMax) {
             doneLoading = true;
         }
     }
+
+    console.log('items unstacked -', count);
 };
 
 // getStickers function params: (String: item name), (Number: load limit per page [defaults to 100])
-getStickers('desert eagle', 100);
+getStickers('usp-s', 20, '10', '100');
