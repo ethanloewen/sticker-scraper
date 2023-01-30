@@ -11,12 +11,21 @@ const categoryId = {
     smg: 5,
 };
 
+// collection of stickers
 const stickerDB = {
     'battle scarred': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/broken_fang/battle_scarred.8f95410ed52cdf856221264b667960419e6bbde0.png',
-    'battle scarred (holo)': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/broken_fang/battle_scarred_holo.655bc441df4fffe528bc8d47b397b581d4499606.png'
+    'battle scarred (holo)': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/broken_fang/battle_scarred_holo.655bc441df4fffe528bc8d47b397b581d4499606.png',
+    'navi 2020': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/rmr2020/navi.afde6ff3f9bb974066e6791013b44babab5b5f27.png'
 };
 
-async function getStickers(query) {
+// stickers for the program to check for
+const searchForStickers = [
+    stickerDB['battle scarred (holo)'],
+    stickerDB['battle scarred'],
+    stickerDB['navi 2020']
+];
+
+async function getStickers(query, loadMax = 100) {
     const browser = await puppeteer.launch({
         headless: false,
         executablePath: '/opt/homebrew/bin/chromium',
@@ -40,23 +49,13 @@ async function getStickers(query) {
     await page.waitForTimeout(1000);
     await page.click('#list-95 > div:nth-child(4)');
 
-    // select search bar and input query
-    await page.click('#input-92');
-    await page.keyboard.type(query, {
-        delay: 50,
-    });
-
-    await page.waitForTimeout(5000);
-
-    // for (let i = 0; i < 20; i++) {
-    //     await page.click('#siteInventoryContainer .count');
-    //     await page.waitForTimeout(1500);
-    // }
+    // search for item
+    await searchItem(query, page);
 
     // expand minimized item groups
     let count = 0;
     let doneLoading = false;
-    let loadingLimit = 30;
+    let loadingLimit = loadMax;
     while (count < loadingLimit && !doneLoading) {
         await page.waitForTimeout(1500);
         if (await page.$('#siteInventoryContainer .count')) {
@@ -71,6 +70,8 @@ async function getStickers(query) {
     const stickerElements = await page.$$('#siteInventoryContainer > div > div > div > div > div > div > div.item-details.md.pa-2 > div.flex.emojis.d-flex.flex-column');
     // let popupClose = true;
 
+    let stickersSearched = 0;
+
     for (let i = 0; i < stickerElements.length; i++) {
         // close popup if it exists
         if (await page.$('#app > div.v-dialog__content.v-dialog__content--active .buttons-container > button')) {
@@ -78,8 +79,11 @@ async function getStickers(query) {
         }
 
         const item = stickerElements[i];
+        const itemParent = (await item.$x('../..'))[0];
+        // console.log('item parent', itemParent);
+
         const stickersArr = await item.$$('img');
-        const targetSticker = stickerDB['battle scarred'];
+        const targetSticker = stickerDB['navi 2020'];
         let stickerFound = false;
 
         for (let sticker of stickersArr) {
@@ -88,10 +92,17 @@ async function getStickers(query) {
             if (stickerUrl == targetSticker) {
                 stickerFound = true;
             }
+
+            stickersSearched++;
         }
 
         if (stickerFound) {
             // click on item with sticker
+            const itemName = await itemParent.$eval('.hover-info .item-hover-name', el => el.innerHTML);
+            const itemPrice = await itemParent.$eval('.price', el => el.innerHTML);
+            const itemWear = await itemParent.$eval('.w-100:nth-of-type(2) span:nth-of-type(1)', el => el.innerHTML);
+            const itemFloat = await itemParent.$eval('.w-100:nth-of-type(2) span:nth-of-type(2)', el => el.innerHTML);
+            console.log(itemName, '-', itemPrice, '-', itemWear, '-', itemFloat);
             await item.click();
 
             console.log('sticker found');
@@ -101,6 +112,19 @@ async function getStickers(query) {
         // reset stickerFound var
         stickerFound = false;
     }
+
+    console.log('done program cycle : searched stickers -', stickersSearched);
 };
 
-getStickers('usp-s');
+async function searchItem(searchTerm, page) {
+    // select search bar and input query
+    await page.click('#input-92');
+    await page.keyboard.type(searchTerm, {
+        delay: 50,
+    });
+
+    await page.waitForTimeout(5000);
+};
+
+// getStickers function params: (String: item name), (Number: load limit per page [defaults to 100])
+getStickers('desert eagle', 10);
