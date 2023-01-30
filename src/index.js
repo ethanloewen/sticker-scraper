@@ -74,14 +74,18 @@ async function getStickers(query, loadMax = 100) {
         // console.log('item parent', itemParent);
 
         const stickersArr = await item.$$('img');
-        const targetSticker = stickerDB['navi 2020'];
+        // const targetSticker = stickerDB['navi 2020'];
         let stickerFound = false;
+        let latestStickerMatch = '';
 
         for (let sticker of stickersArr) {
             const stickerUrl = await page.evaluate(el => el.getAttribute('src'), sticker);
 
-            if (stickerUrl == targetSticker) {
-                stickerFound = true;
+            for (const targetSticker of searchForStickers) {
+                if (stickerUrl == targetSticker) {
+                    stickerFound = true;
+                    latestStickerMatch = Object.keys(stickerDB).find(key => stickerDB[key] === targetSticker);;
+                }
             }
 
             stickersSearched++;
@@ -91,12 +95,13 @@ async function getStickers(query, loadMax = 100) {
             // click on item with sticker
             const itemName = await itemParent.$eval('.hover-info .item-hover-name', el => el.innerHTML);
             const itemPrice = await itemParent.$eval('.price', el => el.innerHTML);
-            const itemWear = await itemParent.$eval('.w-100:nth-of-type(2) span:nth-of-type(1)', el => el.innerHTML);
-            const itemFloat = await itemParent.$eval('.w-100:nth-of-type(2) span:nth-of-type(2)', el => el.innerHTML);
+            const itemWear = await itemParent.$eval('.w-100:nth-of-type(2) > span:nth-last-child(2)', el => el.innerHTML);
+            const itemFloat = await itemParent.$eval('.w-100:nth-of-type(2) > span:nth-last-child(1)', el => el.innerHTML);
+            // const itemIsST = await itemParent.$eval('.w-100:nth-of-type(2) span:nth-of-type(1)', el => el.innerHTML);
             console.log(itemName, '-', itemPrice, '-', itemWear, '-', itemFloat);
             await item.click();
 
-            console.log('sticker found');
+            console.log('Found:', latestStickerMatch);
             // popupClose = false;
         }
     
@@ -134,4 +139,4 @@ async function unstackItems(page, loadMax) {
 };
 
 // getStickers function params: (String: item name), (Number: load limit per page [defaults to 100])
-getStickers('desert eagle', 10);
+getStickers('desert eagle', 100);
