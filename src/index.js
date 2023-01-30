@@ -42,10 +42,10 @@ async function getStickers(query, loadMax = 100, minPrice = '0', maxPrice = '100
     });
 
     // set min price
-    await setMinPrice(minPrice);
+    await setMinPrice(page, minPrice);
 
     // set max price
-    await setMaxPrice(maxPrice);
+    await setMaxPrice(page, maxPrice);
 
     // close popup
     await page.waitForTimeout(2000);
@@ -61,13 +61,63 @@ async function getStickers(query, loadMax = 100, minPrice = '0', maxPrice = '100
     // unstack item containers
     await unstackItems(page, loadMax);
     
+    // find the items that contain target stickers
+    itemsSearched = await findStickers(page);
 
-    // const stickerElements = await page.$$('#siteInventoryContainer .emojis img');
+    console.log('done program cycle : items searched -', itemsSearched);
+};
+
+async function searchItem(page, searchTerm) {
+    // select search bar and input query
+    await page.click('#input-92');
+    await page.keyboard.type(searchTerm, {
+        delay: 50,
+    });
+
+    await page.waitForTimeout(5000);
+};
+
+// expand stacked item groups (default tradeit.gg behavior)
+async function unstackItems(page, loadMax) {
+    let count = 0;
+    let doneLoading = false;
+    let loadingLimit = loadMax;
+    while (count < loadingLimit && !doneLoading) {
+        await page.waitForTimeout(1500);
+        if (await page.$('#siteInventoryContainer .count')) {
+            await page.click('#siteInventoryContainer .count');
+            count++;
+        } else {
+            doneLoading = true;
+        }
+    }
+
+    console.log('items unstacked -', count);
+};
+
+async function setMinPrice(page, minPrice) {
+    const minInput = await page.$('#advanced-filter .price-inputs > div:nth-child(1) input');
+    await minInput.click({clickCount: 3});
+    await minInput.press('Backspace');
+    await page.keyboard.type(minPrice, {
+        delay: 50,
+    });
+}
+
+async function setMaxPrice(page, maxPrice) {
+    const maxInput = await page.$('#advanced-filter .price-inputs > div:nth-child(2) input');
+    await maxInput.click({clickCount: 3});
+    await maxInput.press('Backspace');
+    await page.keyboard.type(maxPrice, {
+        delay: 50,
+    });
+}
+
+// find the items that contain target stickers & return the number of items that were looked at
+async function findStickers(page) {
     const stickerElements = await page.$$('#siteInventoryContainer > div > div > div > div > div > div > div.item-details.md.pa-2 > div.flex.emojis.d-flex.flex-column');
-    // let popupClose = true;
 
     let itemsSearched = 0;
-
     for (let i = 0; i < stickerElements.length; i++) {
         // close popup if it exists
         if (await page.$('#app > div.v-dialog__content.v-dialog__content--active .buttons-container > button')) {
@@ -115,53 +165,7 @@ async function getStickers(query, loadMax = 100, minPrice = '0', maxPrice = '100
         stickerFound = false;
     }
 
-    console.log('done program cycle : items searched -', itemsSearched);
-};
-
-async function searchItem(page, searchTerm) {
-    // select search bar and input query
-    await page.click('#input-92');
-    await page.keyboard.type(searchTerm, {
-        delay: 50,
-    });
-
-    await page.waitForTimeout(5000);
-};
-
-// expand stacked item groups (default tradeit.gg behavior)
-async function unstackItems(page, loadMax) {
-    let count = 0;
-    let doneLoading = false;
-    let loadingLimit = loadMax;
-    while (count < loadingLimit && !doneLoading) {
-        await page.waitForTimeout(1500);
-        if (await page.$('#siteInventoryContainer .count')) {
-            await page.click('#siteInventoryContainer .count');
-            count++;
-        } else {
-            doneLoading = true;
-        }
-    }
-
-    console.log('items unstacked -', count);
-};
-
-async function setMinPrice(minPrice) {
-    const minInput = await page.$('#advanced-filter .price-inputs > div:nth-child(1) input');
-    await minInput.click({clickCount: 3});
-    await minInput.press('Backspace');
-    await page.keyboard.type(minPrice, {
-        delay: 50,
-    });
-}
-
-async function setMaxPrice(maxPrice) {
-    const maxInput = await page.$('#advanced-filter .price-inputs > div:nth-child(2) input');
-    await maxInput.click({clickCount: 3});
-    await maxInput.press('Backspace');
-    await page.keyboard.type(maxPrice, {
-        delay: 50,
-    });
+    return itemsSearched;
 }
 
 // getStickers function params:
