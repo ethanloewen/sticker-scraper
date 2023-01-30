@@ -42,22 +42,10 @@ async function getStickers(query, loadMax = 100, minPrice = '0', maxPrice = '100
     });
 
     // set min price
-    const minInput = await page.$('#advanced-filter .price-inputs > div:nth-child(1) input');
-    await minInput.click({clickCount: 3});
-    await minInput.press('Backspace');
-    // await page.waitForTimeout(5000);
-    await page.keyboard.type(minPrice, {
-        delay: 50,
-    });
+    await setMinPrice(minPrice);
 
     // set max price
-    const maxInput = await page.$('#advanced-filter .price-inputs > div:nth-child(2) input');
-    await maxInput.click({clickCount: 3});
-    await maxInput.press('Backspace');
-    // await page.waitForTimeout(5000);
-    await page.keyboard.type(maxPrice, {
-        delay: 50,
-    });
+    await setMaxPrice(maxPrice);
 
     // close popup
     await page.waitForTimeout(2000);
@@ -158,5 +146,24 @@ async function unstackItems(page, loadMax) {
     console.log('items unstacked -', count);
 };
 
-// getStickers function params: (String: item name), (Number: load limit per page [defaults to 100])
+async function setMinPrice(minPrice) {
+    const minInput = await page.$('#advanced-filter .price-inputs > div:nth-child(1) input');
+    await minInput.click({clickCount: 3});
+    await minInput.press('Backspace');
+    await page.keyboard.type(minPrice, {
+        delay: 50,
+    });
+}
+
+async function setMaxPrice(maxPrice) {
+    const maxInput = await page.$('#advanced-filter .price-inputs > div:nth-child(2) input');
+    await maxInput.click({clickCount: 3});
+    await maxInput.press('Backspace');
+    await page.keyboard.type(maxPrice, {
+        delay: 50,
+    });
+}
+
+// getStickers function params:
+//  (String: item name), (Number: load limit per page [defaults=100]), (String: min price [default=0]), (String: max price [default=0])
 getStickers('usp-s', 20, '10', '100');
