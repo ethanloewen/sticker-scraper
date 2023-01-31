@@ -51,8 +51,8 @@ async function getStickers(query, loadMax = 100, minPrice = '0', maxPrice = '100
         document.querySelectorAll('.v-input--selection-controls__ripple')[9].click();
     });
 
-    // set min price
-    await setMinPrice(page, minPrice);
+    // // set min price
+    // await setMinPrice(page, minPrice);
 
     // set max price
     await setMaxPrice(page, maxPrice);
@@ -69,17 +69,29 @@ async function getStickers(query, loadMax = 100, minPrice = '0', maxPrice = '100
     await searchItem(page, query);
 
     // handle loading/unloading sections of items to avoid page lag/crashes
-    await actionCycle(page, loadMax);
+    await actionCycle(page, loadMax, minPrice);
 
     // console.log('done program cycle : items searched -', itemsSearched);
 };
 
-async function actionCycle(page, loadMax) {
-    // unstack item containers
-    await console.log(await unstackItems(page, loadMax));
-        
-    // find the items that contain target stickers
-    await findStickers(page);
+async function actionCycle(page, loadMax, minPrice) {
+    let continueCycle = true;
+    let newMinPrice = minPrice;
+
+    while (continueCycle) {
+        // unstack item containers
+        let unstackResult = await unstackItems(page, loadMax, newMinPrice);
+                
+        // find the items that contain target stickers
+        await findStickers(page);
+
+        // break loop or set new minimum price for the next unstackItems cycle
+        if (unstackResult == false) {
+            continueCycle = false;
+        } else {
+            newMinPrice = unstackResult;
+        }
+    }
 };
 
 async function searchItem(page, searchTerm) {
@@ -99,7 +111,8 @@ async function unstackItems(page, loadMax, minPrice) {
     let returnStr = '';
     let stackPrice = '';
 
-    // setMinPrice(page, minPrice);
+    setMinPrice(page, minPrice);
+    await page.waitForTimeout(1500);
 
     // Loop will terminate when count > loadMax
     while (true) {
@@ -122,7 +135,8 @@ async function unstackItems(page, loadMax, minPrice) {
         // continue to next cycle
         if (count >= loadMax) {
             console.log('count exceeds loadMax');
-            returnStr = stackPrice;
+            returnStr = stackPrice.slice(1);
+            // console.log('return string -> ', returnStr);
             break;
         }
     }
@@ -208,4 +222,4 @@ async function setMaxPrice(page, maxPrice) {
 
 // getStickers function params:
 //  (String: item name), (Number: load limit per page [defaults=100]), (String: min price [default=0]), (String: max price [default=0])
-getStickers('ak-47', 100, '0', '4');
+getStickers('ak-47', 50, '0', '20');
