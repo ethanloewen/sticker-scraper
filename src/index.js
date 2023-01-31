@@ -15,14 +15,24 @@ const categoryId = {
 const stickerDB = {
     'battle scarred': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/broken_fang/battle_scarred.8f95410ed52cdf856221264b667960419e6bbde0.png',
     'battle scarred (holo)': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/broken_fang/battle_scarred_holo.655bc441df4fffe528bc8d47b397b581d4499606.png',
-    'navi 2020': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/rmr2020/navi.afde6ff3f9bb974066e6791013b44babab5b5f27.png'
+    'navi 2020': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/rmr2020/navi.afde6ff3f9bb974066e6791013b44babab5b5f27.png',
+    's1mple (gold) 2021': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/stockh2021/sig_s1mple_gold.18cad5a3b425cc3db4c5a4e3571b5fbc9f2780f0.png',
+    'cloud9 (holo) MLG columbus 2016': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/columbus2016/c9_holo.9c06edd65419a876e9d93600e49d5bed03aac049.png',
+    'assasin (holo)': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/halo/assassin_holo.7bbe8c0f31d77b5e637e4674ce103a7dc21daae4.png',
+    'infinite diamond (holo)': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/spring2022/infinite_diamond_holo.c00f9decab265d48ec94b4ca9dbb4528cbf768e5.png',
+    'luminosity gaming (holo) MLG columbus 2016': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/columbus2016/lumi_holo.439d12318fcf27986e8680abcab10834c1f03c25.png',
+    'luminosity gaming MLG columbus 2016': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/columbus2016/lumi.2b4b6363528203dfb075646915fee89507baad8e.png',
 };
 
 // stickers for the program to check for
 const searchForStickers = [
     stickerDB['battle scarred (holo)'],
     stickerDB['battle scarred'],
-    stickerDB['navi 2020']
+    stickerDB['s1mple (gold) 2021'],
+    stickerDB['cloud9 (holo) MLG columbus 2016'],
+    stickerDB['infinite diamond (holo)'],
+    stickerDB['luminosity gaming (holo) MLG columbus 2016'],
+    stickerDB['luminosity gaming MLG columbus 2016'],
 ];
 
 async function getStickers(query, loadMax = 100, minPrice = '0', maxPrice = '100000') {
@@ -58,13 +68,18 @@ async function getStickers(query, loadMax = 100, minPrice = '0', maxPrice = '100
     // search for item
     await searchItem(page, query);
 
-    // unstack item containers
-    await unstackItems(page, loadMax);
-    
-    // find the items that contain target stickers
-    itemsSearched = await findStickers(page);
+    // handle loading/unloading sections of items to avoid page lag/crashes
+    await actionCycle(page, loadMax);
 
-    console.log('done program cycle : items searched -', itemsSearched);
+    // console.log('done program cycle : items searched -', itemsSearched);
+};
+
+async function actionCycle(page, loadMax) {
+    // unstack item containers
+    await console.log(await unstackItems(page, loadMax));
+        
+    // find the items that contain target stickers
+    await findStickers(page);
 };
 
 async function searchItem(page, searchTerm) {
@@ -78,40 +93,43 @@ async function searchItem(page, searchTerm) {
 };
 
 // expand stacked item groups (default tradeit.gg behavior)
-async function unstackItems(page, loadMax) {
+async function unstackItems(page, loadMax, minPrice) {
     let count = 0;
     let doneLoading = false;
-    let loadingLimit = loadMax;
-    while (count < loadingLimit && !doneLoading) {
+    let returnStr = '';
+    let stackPrice = '';
+
+    // setMinPrice(page, minPrice);
+
+    // Loop will terminate when count > loadMax
+    while (true) {
         await page.waitForTimeout(1500);
+
         if (await page.$('#siteInventoryContainer .count')) {
+            const unstackContainer = await page.$('#siteInventoryContainer .count');
+            const unstackParent = (await unstackContainer.$x('../..'))[0];
+            stackPrice = (await unstackParent.$eval('.price', el => el.innerHTML)).trim();
+            console.log('stacked item price', stackPrice);
+
             await page.click('#siteInventoryContainer .count');
             count++;
         } else {
-            doneLoading = true;
+            // no more cycles as all containers have been expanded
+            console.log('hit before break');
+            break;
+        }
+
+        // continue to next cycle
+        if (count >= loadMax) {
+            console.log('count exceeds loadMax');
+            returnStr = stackPrice;
+            break;
         }
     }
 
     console.log('items unstacked -', count);
+    return (returnStr === '') ? false : returnStr;
 };
-
-async function setMinPrice(page, minPrice) {
-    const minInput = await page.$('#advanced-filter .price-inputs > div:nth-child(1) input');
-    await minInput.click({clickCount: 3});
-    await minInput.press('Backspace');
-    await page.keyboard.type(minPrice, {
-        delay: 50,
-    });
-}
-
-async function setMaxPrice(page, maxPrice) {
-    const maxInput = await page.$('#advanced-filter .price-inputs > div:nth-child(2) input');
-    await maxInput.click({clickCount: 3});
-    await maxInput.press('Backspace');
-    await page.keyboard.type(maxPrice, {
-        delay: 50,
-    });
-}
 
 // find the items that contain target stickers & return the number of items that were looked at
 async function findStickers(page) {
@@ -149,10 +167,10 @@ async function findStickers(page) {
 
         if (stickerFound) {
             // click on item with sticker
-            const itemName = await itemParent.$eval('.hover-info .item-hover-name', el => el.innerHTML);
-            const itemPrice = await itemParent.$eval('.price', el => el.innerHTML);
-            const itemWear = await itemParent.$eval('.w-100:nth-of-type(2) > span:nth-last-child(2)', el => el.innerHTML);
-            const itemFloat = await itemParent.$eval('.w-100:nth-of-type(2) > span:nth-last-child(1)', el => el.innerHTML);
+            const itemName = (await itemParent.$eval('.hover-info .item-hover-name', el => el.innerHTML)).trim();
+            const itemPrice = (await itemParent.$eval('.price', el => el.innerHTML)).trim();
+            const itemWear = (await itemParent.$eval('.w-100:nth-of-type(2) > span:nth-last-child(2)', el => el.innerHTML)).trim();
+            const itemFloat = (await itemParent.$eval('.w-100:nth-of-type(2) > span:nth-last-child(1)', el => el.innerHTML)).trim();
             // const itemIsST = await itemParent.$eval('.w-100:nth-of-type(2) span:nth-of-type(1)', el => el.innerHTML);
             console.log(itemName, '-', itemPrice, '-', itemWear, '-', itemFloat);
             await item.click();
@@ -165,9 +183,29 @@ async function findStickers(page) {
         stickerFound = false;
     }
 
-    return itemsSearched;
+    // return itemsSearched;
 }
+
+async function setMinPrice(page, minPrice) {
+    const minInput = await page.$('#advanced-filter .price-inputs > div:nth-child(1) input');
+    await minInput.click({clickCount: 3});
+    await minInput.press('Backspace');
+    await page.keyboard.type(minPrice, {
+        delay: 50,
+    });
+}
+
+async function setMaxPrice(page, maxPrice) {
+    const maxInput = await page.$('#advanced-filter .price-inputs > div:nth-child(2) input');
+    await maxInput.click({clickCount: 3});
+    await maxInput.press('Backspace');
+    await page.keyboard.type(maxPrice, {
+        delay: 50,
+    });
+}
+
+
 
 // getStickers function params:
 //  (String: item name), (Number: load limit per page [defaults=100]), (String: min price [default=0]), (String: max price [default=0])
-getStickers('usp-s', 20, '10', '100');
+getStickers('ak-47', 100, '0', '4');
