@@ -22,17 +22,24 @@ const stickerDB = {
     'infinite diamond (holo)': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/spring2022/infinite_diamond_holo.c00f9decab265d48ec94b4ca9dbb4528cbf768e5.png',
     'luminosity gaming (holo) MLG columbus 2016': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/columbus2016/lumi_holo.439d12318fcf27986e8680abcab10834c1f03c25.png',
     'luminosity gaming MLG columbus 2016': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/columbus2016/lumi.2b4b6363528203dfb075646915fee89507baad8e.png',
+    'g2 esports (holo) | stolckholm 2021': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/stockh2021/g2_holo.8fb2101fd98973f75c580ffdf6a0ccea05f7fdfb.png',
+    'liquid fire': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/op_riptide/rising_tide_paper.2288026b78a9336bbfabb3e9ec25f6a9f9087a4c.png',
+    'great wave (holo)': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/op_riptide/great_wave_holo.55bd1bab13e1670310c57d5551e6b4a59e592682.png',
+    'great wave': 'https://steamcdn-a.akamaihd.net/apps/730/icons/econ/stickers/op_riptide/great_wave_paper.b3a8b25f353a88f24878fdb7b305e6c0e3866c47.png',
 };
 
 // stickers for the program to check for
 const searchForStickers = [
-    stickerDB['battle scarred (holo)'],
-    stickerDB['battle scarred'],
-    stickerDB['s1mple (gold) 2021'],
-    stickerDB['cloud9 (holo) MLG columbus 2016'],
-    stickerDB['infinite diamond (holo)'],
-    stickerDB['luminosity gaming (holo) MLG columbus 2016'],
-    stickerDB['luminosity gaming MLG columbus 2016'],
+    // stickerDB['battle scarred (holo)'],
+    // stickerDB['battle scarred'],
+    // stickerDB['s1mple (gold) 2021'],
+    // stickerDB['cloud9 (holo) MLG columbus 2016'],
+    // stickerDB['infinite diamond (holo)'],
+    // stickerDB['luminosity gaming (holo) MLG columbus 2016'],
+    // stickerDB['luminosity gaming MLG columbus 2016'],
+    // stickerDB['g2 esports (holo) | stolckholm 2021'],
+    stickerDB['great wave'],
+    stickerDB['great wave (holo)'],
 ];
 
 async function getStickers(query, loadMax = 100, minPrice = '0', maxPrice = '100000') {
@@ -72,6 +79,7 @@ async function getStickers(query, loadMax = 100, minPrice = '0', maxPrice = '100
     await actionCycle(page, loadMax, minPrice);
 
     // console.log('done program cycle : items searched -', itemsSearched);
+    console.log('...program cycle done...');
 };
 
 async function actionCycle(page, loadMax, minPrice) {
@@ -112,7 +120,7 @@ async function unstackItems(page, loadMax, minPrice) {
     let stackPrice = '';
 
     setMinPrice(page, minPrice);
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(5000);
 
     // Loop will terminate when count > loadMax
     while (true) {
@@ -180,6 +188,7 @@ async function findStickers(page) {
         }
 
         if (stickerFound) {
+            await page.waitForTimeout(1000);
             // click on item with sticker
             const itemName = (await itemParent.$eval('.hover-info .item-hover-name', el => el.innerHTML)).trim();
             const itemPrice = (await itemParent.$eval('.price', el => el.innerHTML)).trim();
@@ -222,4 +231,4 @@ async function setMaxPrice(page, maxPrice) {
 
 // getStickers function params:
 //  (String: item name), (Number: load limit per page [defaults=100]), (String: min price [default=0]), (String: max price [default=0])
-getStickers('ak-47', 50, '0', '20');
+getStickers('', 70, '0.75', '10');
